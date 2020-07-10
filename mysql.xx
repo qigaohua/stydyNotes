@@ -1,0 +1,763 @@
+>>>>>
+密码管理：
+
+一、
+管理员可以在系统命令行中使用mysqladmin命令设置mysql用户的密码。
+使用mysqladmin设置密码的命令语法如下：
+mysqladmin -u用户名 -p旧密码 password 新密码
+
+二、
+使用root用户登录以后，使用SET PASSWORD命令设置用户密码，命令如下
+#mysql -u root
+mysql> SET PASSWORD FOR 'user'@'IPorHost' = PASSWORD('newpassword');
+
+三、
+注：使用如下方法修改用户密码时，需确定mysql的版本。
+
+在mysql5.6以及之前的版本中，可以使用如下方法修改用户密码。
+使用mysql的root用户登录以后，修改mysql.user表中对应用户的password字段，命令如下
+update mysql.user set password = password('密码') where user='用户名';
+注意，上述命令修改用户密码时，不会区分用户连接数据库时所在的host，什么意思呢，就是说，如果同时存在zsy@localhost与zsy@127.0.0.1,那么这两个用户的密码都会被更改，如果想要针对某个host下的某个用户设定密码需要在where字句中加入过滤条件。
+
+修改完成后，最好刷新权限 flush privileges
+
+
+
+在mysql5.7中，mysql.user表的password字段已经被更改为authentication_string字段，也就是说，mysql5.7中，将使用authentication_string字段保存用户的密码。
+所以，如果想要在mysql5.7中使用上述方法修改用户的密码，则需要使用如下语句。
+update mysql.user set authentication_string = password('密码') where user='用户名';
+
+
+
+四、如果忘记了mysql的root用户的密码，可以使用如下方法，重置root密码。
+
+1.停止当前mysql进程。
+2.mysql进程停止后，使用如下命令启动mysql，可以绕过用户验证。
+mysqld_safe --skip-grant-tables &
+
+3.完成上述步骤后，使用如下命令登录数据库
+mysql -uroot
+
+4.登录后使用之前说过的方法，修改root用户密码即可。
+mysql> UPDATE mysql.user SET password=PASSWORD("new password") WHERE user='root';
+
+5.刷新后退出
+flush privileges
+
+6.停止数据库以后，按照正常的方式重启数据库，使用新密码登录即可。
+<<<<<
+
+
+
+
+>>>>>
+授权管理
+
+一、
+常用授权语句的语法如下：
+GRANT ALL [PRIVILEGES] ON db.tbl TO 'username'@'host' IDENTIFIED BY 'password';
+
+示例语句如下：
+给本地用户授权某个数据库的所有权限
+grant 权限 on 数据库名.表名 to 用户名@"本地回环地址或localhost" identified by "密码"
+grant all privileges on zsythink.* to zsy@localhost identified by 'zsythink';
+grant all privileges on zsythink.* to zsy@127.0.0.1 identified by 'zsythink';
+
+注意：上述两条命令都表示对zsy用户开放zsythink数据库的所有权限，但是上述两条命令的针对的zsy用户是不一样的，一个是zsy@localhost用户，一个是zsy@127.0.0.1用户，mysql会认为这是两个用户。
+授权时privileges关键字可省。
+
+
+
+给远程用户授权
+grant 权限 on 数据库名.* to 用户名@'远程主机地址或对应的主机名' identified by "密码"
+grant all privileges on zsythink.* to zsy@'%' identified  by  'zsythink';
+
+上述命令比较危险，表示zsy用户可以通过任意主机连接到zsythink数据库，并且拥有zsythink数据库的所有权限。
+
+我们可以稍微缩小一下zsy用户能够连接数据库的IP地址范围，比如，只允许zsy用户通过192.168网段的地址连接zsythink数据库，示例语句如下
+grant all privileges on zsythink.* to zsy@'192.168.%.%' identified  by  'zsythink';
+
+使用上述命令授权后，需要使用如下命令刷新。
+FLUSH PRIVILEGES
+
+
+
+当然，我们也可以授权用户某个数据库的某个权限，比如，只授权用户对于某个数据库的查询权限，示例如下。
+grant select privileges on zsythink.* to zsy@'192.168.%.%';
+
+也可以授权用户某个数据库的多个权限，比如，授权用户
+grant insert,delete,update,select on zsythink.* to zsy@'192.168.%.%';
+
+还可以将同样的权限同时授权于多个用户，示例如下
+grant select on hellodb.* to zsy@localhost,zsythink@localhost;
+
+如果想要只对某张表的某个字段授权，可以使用如下语句
+grant select (name,age) on zsythink.students to zsy@localhost;
+上述示例表示只授予zsy用户对zsythink库中students表的name字段和age字段的查询权限，虽然students表中还有stuid字段、gender字段、weight字段，但是zsy用户无法看到这三个字段，也不能查询这三个字段中的内容，因为zsy没有查询这三个字段的权限，当zsy用户使用desc命令查看students表结构时，只能看到name字段和age字段，如果zsy用户使用select * from students这样的查询语句查询students表，也会出现报错信息，提示对某些字段没有操作权限。
+
+
+
+
+如果zsythink数据库中有一张表的名称为test，同时，zsythink数据库中有一个函数也叫test，那么，此时如果管理员只想将test函数的权限授予zsy用户，而不是想将表的权限授予zsy用户，该怎么办呢？我们可以通过function关键字指明被操作的对象为函数，而不是表，示例如下：
+grant execute on function zsythink.test to zsy@'192.168.%.%';
+
+上述语句表示授权zsy用户对zsythink数据库中test函数拥有执行权限。
+
+同理，也可以使用procedure关键字，指明被操作的对象是存储过程，比如，如下语句表示授权zsy用户对zsythink数据库中的test存储过程拥有执行权限。
+grant execute on procedure zsythink.test to zsy@'192.168.%.%';
+
+小结：使用function关键字和procedure关键字可以对函数或存储过程授权，同理，使用view关键字即可对视图进行授权。
+
+
+
+
+当一个用户被创建时，mysql会自动授予其usage权限。usage权限只能用于登录数据，不能执行其他操作。
+如果用户有可能会跨越不安全的网络连接到数据库，我们可以强制用户使用ssl建立会话，命令如下。
+grant usage on *.* to 'zsy'@'222.222.222.222' require ssl;
+上述示例表示'zsy'@'222.222.222.222'用户连接当前mysql中的所有数据库时都必须使用ssl建立会话。
+
+如果想要取消上述的ssl连接限制，可以使用如下命令，撤销强制使用ssl建立会话的限制。
+grant usage on *.* to 'zsy'@'222.222.222.222' require none;
+
+
+
+假设，root用户授权了zsy用户某些权限，那么zsy用户是否能将已经拥有的权限授予别的用户吗？zsy用户能否将已有权限授权于其他用户取决于zsy用户是否拥有grant选项。
+如果在授权zsy用户时，搭配了grant选项，则zsy用户有权将已拥有的权限授予其他用户，但是这样做比较危险，一般情况下应由管理员同一授权，但是此处用于演示，给出如下示例。
+grant select on zsythink.* to zsy@'192.168.%.%'  with grant option;
+上述命令表示zsy用户被授予了zsythink数据库的select的权限，同时zsy用户也能将此权限授予其他用户，而且，zsy用户也能在授予其他用户select权限时使用with grant option，所以这很危险，请勿随意使用此选项。
+
+
+
+除了上面提到的grant option，管理员还可以通过如下选项对用户进行一些其他的限制
+MAX_QUERIES_PER_HOUR：限制用户每小时执行的查询语句数量；
+MAX_UPDATES_PER_HOUR：限制用户每小时执行的更新语句数量；
+MAX_CONNECTIONS_PER_HOUR：限制用户每小时连接数据库的次数；
+MAX_USER_CONNECTIONS：限制用户使用当前账号同时连接服务器的连接数量；
+
+上述各限制选项的示例如下。
+grant select on *.* to zsy@'192.168.%.%' identified by '123456' with max_queries_per_hour 20;
+grant select on *.* to zsy@'192.168.%.%' identified by '123456' with max_updates_per_hour 10;
+grant select on *.* to zsy@'192.168.%.%' identified by '123456' with max_connections_per_hour 15;
+grant select on *.* to zsy@'192.168.%.%' identified by '123456' with max_user_connections 2;
+如果将上述限制对应的数字改为0，则表示不限制。
+<<<<<
+
+
+
+
+
+>>>>>
+查看授权
+
+查看授权可以从两个方面查看，从用户的角度查看授权，或者从数据库的角度查看授权，从用户的角度查看权限表示查看对应用户都能操作哪些数据库，从数据库的角度查看权限表示查看指定数据库都对哪些用户开放了哪些权限，我们会给出示例
+
+从数据库用户的角度查看授权的语句如下：
+show grants for 用户名;
+
+比如，当我们需要查看zsy@localhost这个用户对那些库都有哪些权限，可以使用如下语句：
+show grants for zsy@localhost;
+
+
+
+从数据库的角度查看授权，可以使用如下语句：
+select * from mysql.db where Db="你要查看的数据库"
+<<<<<
+
+
+
+>>>>>
+删除授权
+删除授权/撤销授权的常用语句如下：
+revoke "要移除的权限" on 数据库.表 from 用户@host;
+
+比如删除zsy@www.zsythink.net用户对于word数据库的所有操作权限，语句如下。
+revoke all on word.* from zsy@www.zsythink.net;
+<<<<<
+
+
+>>>>>
+库管理语句
+
+1、创建数据库
+
+创建名为testdb的数据库
+create database testdb;
+
+如果名为testdb的数据库不存在，则创建之。
+create database if not exists testdb;
+
+如果名为testdb的数据库不存在，则创建之，并且设置其字符集为utf16.
+create database if not exists testdb default character set utf16;
+
+
+2、查看数据库
+
+列出所有已经存在的数据库，查看所有数据库：
+show databases;
+
+列出创建对应数据库的sql语句：
+show create database testdb;
+
+查看可用的字符集的命令：
+show character set;
+
+查看排序方式的命令：
+show collation;
+
+查看当前数据库与当前连接的概要信息:
+status;
+
+
+3、修改数据库
+
+修改数据库的基本语法如下：
+ALTER {DATABASE | SCHEMA} [db_name] alter_specification ...
+
+alter_specification:
+[DEFAULT] CHARACTER SET [=] charset_name |  [DEFAULT] COLLATE [=] collation_name
+
+修改数据库无非就是修改数据库的字符集，或者修改字符集的排序规则，字符集与排序规则的概念已经在创建数据库的命令中描述过，此处不再赘述，
+但是需要注意的是，修改字符集与修改排序规则是"二选一"的，原因在创建数据库的命令中同样描述过，所以直接给出示例语句如下。
+
+
+修改数据库的字符集:
+
+使用如下语句查看字符集
+show variables like 'character%';
+
+如果字符集与我们期望的字符集不相符，则使用如下语句修改数据库字符集。
+alter database testdb character set utf8;
+
+修改数据库的字符集，并设置为默认字符集，数据库中的表都会继承此字符集。
+alter database testdb default character set utf8;
+
+
+4、删除数据库
+
+删除数据库的基本语法如下，注意，删除操作无法恢复：
+DROP {DATABASE | SCHEMA} [IF EXISTS] db_name
+
+示例语句：
+drop database if exists testdb;
+
+<<<<<
+
+
+
+>>>>>
+表管理语句
+
+1、查看表
+
+如果想要列出当前数据库上的所有表，可以使用如下语句。
+show tables;
+
+如果想要查看当前库中所有表的具体属性信息，可以使用如下语句。
+show table status\G;
+
+如果只想查看当前库的某张表的状态，可以使用like匹配表名称
+show table status like ''\G;
+或者使用通配符，查看表名类似的表的信息
+show table status where name like '% %'\G;
+
+查看表结构的对应语句如下：
+desc Table_Name;
+
+如果想要查看某张表被创建时对应的sql语句，可以使用如下语法。
+show create table table_name;
+
+
+2、删除表
+
+删除表比较简单，但是非常危险，如果不是确定要删而且必须要删，请勿随意删除，数据无价，请勿手贱，此处没有回收站。
+删除表的语句如下，可以删除指定的单张表，也可以一次删除多张表，表之间用逗号隔开。
+drop table t_name;
+
+
+3、修改表
+
+修改表的基本语法如下
+ALTER  TABLE tbl_name [alter_specification [, alter_specification] ...]
+
+
+修改表名
+
+重命名表,将表test1改名为test2
+alter table test1 rename as test2;
+
+
+
+添加字段
+
+为表添加字段，只添加字段，不指定字段的任何其他属性，如下语句表示为ttt表添加age字段。
+alter table ttt add column age int;
+修改表的字段时，column可省，不指定被操作对象时，默认为操作列。省略column后如下。
+alter table ttt add age int;
+
+为表添加字段，同时为添加的字段设定相应的约束。
+alter table ttt add age int not null default 0;
+alter table ttt add column age int not null default 0;
+
+为表添加字段，同时指定新添加字段在表中的位置，如下语句表示将新添加的id字段设置为表中的第一个字段。
+alter table ttt add  id int first;
+为表添加字段，同时指定新添加字段在表中的位置，如下语句表示将新添加的age字段添加到name字段的后面。
+alter table ttt add column age  int after name;
+
+
+
+删除字段
+
+删除包含数据的字段时需要三思，珍爱数据，请勿手欠。
+如下语句表示从tt表总删除stuname字段。
+alter table tt drop stuname;
+
+
+
+修改字段
+
+此处只列出修改字段名称和修改字段数据类型的相关语句，修改字段约束和索引的语句单独归为一类总结。
+
+重命名字段，修改字段名称
+如下语句表示将testtable表中的name字段重命名为name1，name字段的数据类型为char（5），
+即使只是重命名，我们也需要在新名称后指定原字段的数据类型，否则会报错。
+alter table testtable change name name1 char(5);
+
+
+修改字段类型
+
+修改字段数据类型可以使用两种语法，modify与change两种，我们先来看看使用change这个语法怎么做。
+使用change改变字段的数据类型，与使用change重命名字段的方法几乎一样，因为即使你不是想要重命名字段，也需要将字段名称重复写两次，
+比如将age字段从int类型改为char类型，当然，在有数据的情况下，这样改还不会出现什么问题，但是如果是把字符型改为整数类型，则会出现问题，
+所以，在修改字段之前多次确定，语句示例如下
+alter table testtable change age age char(10);
+
+或者使用modify来改变字段类型，modify不能用于修改字段名称，示例如下。
+alter table testtable modify age int;
+
+注意：假如有一个name字段，数据类型为varchar(20), 同时，这张表上存在一个索引，这个索引使用了name字段的前10个字符作为索引，
+那么如果你想要将name字段的数据类型的长度缩短，则最短只能改为varchar(10)。
+
+<<<<<
+
+
+
+>>>>>
+创建表
+
+
+创建一个新表的基本语法如下：
+CREATE TABLE [IF NOT EXISTS] tbl_name (create_definition,...)
+
+我们可以把上述语法分为两个部分查看。
+
+前半部分为create table [IF NOT EXISTS] tbl_name ，很容易理解，create table是关键字，表示创建表，tbl_name为表名， [IF NOT EXISTS]为可选的，表示如果表不存在时才创建。
+后半部分为(create_definition,...)，首先要注意的是，create_definition需要被括号括起来。
+
+那么我们来看看create_definition中都包含什么，我们可以将create_definition中的定义分为如下几类：
+字段定义、表级别约束定义、索引定义。
+那么我们分别解释一下每种定义都是什么含义。
+
+
+字段定义：
+column_name column_defination
+通过column_name指明字段名称，通过 column_defination指定字段定义。
+我们可以把column_defination简单的理解为字段的数据类型的定义，同时，还能为当前字段定义一些单独的约束。
+所以，我们可以把column_defination大概分为两部分，字段类型 和 可选约束设置：
+常用的data_type我们不再描述，而且data_type是不可省的。
+常用的可选约束设置如下，注意，并不完全，列出较为常用的。
+[NOT NULL | NULL] [DEFAULT default_value] [AUTO_INCREMENT] [UNIQUE [KEY] | [PRIMARY] KEY] [COMMENT 'string']
+
+not null表示对应字段不能为空，不设置默认为null，表示对应字段可以为空。
+DEFAULT default_value 表示设置字段默认值。
+
+AUTO_INCREMENT 表示对应字段使用自动增长，一个表中只有一个字段能被设置为自动增长，而且这个字段必须被定义为key（或者索引），mysql默认也会认为"自动增长的键字段"为主键字段。
+所以，结合着一个表中只能有一个主键的定义，auto_increment往往只针对于主键字段进行设置，因为一个表中如果已经存在主键，
+当我们对非主键的键字段定义auto_increment时会报错，因为一个表中只能有一个主键，mysql又默认认为自动增长的键字段为主键，
+这样就会产生冲突，mysql认为这样会产生两个主键，所以，我们往往只对主键字段设置atuo_increment  , 在mariadb5.5.4中，
+如果我们创建了一个新表，在表中创建了一个字段，将第一个字段定义为索引（不是key），然后为这个字段设定auto_increment,这时，
+表中不存在任何主键，因为mysql会认为自动增长的键字段为主键，不会认为自动增长的索引字段为主键，如果我们再添加一个新的字段，
+而且将第二个字段也定义为索引，再对第二个字段设置auto_increment，就会报错，因为一个表中，只能有一列被设置为auto_increment，
+如果此时，我们再添加第三个字段，并将其设置为主键字段，那么这个主键字段将不能拥有自动增长功能，因为第一个字段已经被设置为了自动增长。
+所以，综上所述，由于诸多的限制，我们往往只对主键设置自动增长。如果字段被设置为自动增长，当删除了这个表中的某一行时，
+那么对应行的此字段的数值将无法再次被使用。
+
+UNIQUE [KEY]此设置可省，如果显示设置，表示从字段级别设置当前字段为唯一键，key省，我们还可以通过表级别对当前字段进行唯一约束的定义。
+
+[PRIMARY] KEY 此设置可省，如果显示设置，表示从字段级别设置当前字段为主键，与UNIQUE [KEY]不同，UNIQUE [KEY]中的key可省，而  [PRIMARY] KEY中的 PRIMARY可省，KEY不可省，只写key就代表设置当前字段为primary key，
+注意，如果在字段级别设置当前字段为主键，则表示主键只包含当前字段一个字段，如果需要设置包含多个字段的主键，则必须在"表级别的约束定义"中设置主键。
+
+[COMMENT 'string']设置字段的描述信息，此设置可省。
+
+
+表级别约束定义（key定义）：
+PRIMARY KEY(col1[,col2, ....]) 用于定义主键，一个表中只能有一个主键，一个主键可以包含多个字段。
+UNIQUE KEY (col1[,col2, ....]) 用于定义唯一键，一个表中可以有多个唯一键。
+FOREIGN KEY  用于定义外键
+CHECK(expr)  用于定义检查性约束
+当我们创建key时，即相当于创建了index。
+
+
+索引定义（index定义）：
+{INDEX|KEY} 我们可以使用index或key关键字创建索引，注意，如果key写在此位置，与index相同，表示定义索引，而不是定义key。
+{FULLTEXT|SPATIAL} 如果我们的数据存储引擎为myisam，那么它还有两个特殊的索引，全文索引和空间索引。innodb引擎不支持全文索引和空间索引，但是在某些分支的新版本中，貌似已经有支持空间索引的innodb出现了，我们不进行细究。
+
+
+
+
+除了语法创建一个新的空表以外，还能根据查询出的数据创建出一个新表，并且将查询的数据填充到创建的表中。
+比如，使用如下方法，将students表中的stuid,name,age三个字段中的数据取出，并填充到创建的新表testtb2当中，但是请注意，通过这种方式将testtb2创建完成后，只能将对应的数据填充过去，但是表的字段中的约束以及表的索引则无法复制过去，如果需要对应的约束，需要手动指明。
+create table testtb2 select stuid, name, age fron students;
+
+也可以只复制表结构，比如，我们创建一个新表，表结构与students表完全一致，也就是说，新表的所有字段都与students表一致，而且字段的约束也都相同，表中存在的索引也都相同。
+所以，单纯的完全的复制表结构，可以使用如下语句
+create table testtb1 like students;
+<<<<<
+
+
+
+>>>>>
+约束管理
+
+
+mysql中的常用约束有主键约束、唯一键约束、外键约束、非空约束等。
+
+主键：primary key，表上一个或多个字段的组合，填入主键字段中的数据，必须不同于已经存在的其它行的相同字段上的数据，而且也不能为空；一个表只能存一个主键，一个主键可以由多个字段组成；
+惟一键：unique key，表上一个或多个字段的组合，填入其中字段中的数据，必须不同于已经存在的其它行的相同字段上的数据，但可以为空；一个表可以有多个唯一键；
+外键：foreign key，一个表中的外键字段中所能够插入的数据取值范围，取决于引用的另一个表上主键字段上的已经存在数据集合；
+检查条件约束：check，自定义的逻辑表达式；
+
+
+1、非空约束
+
+添加非空约束
+设置非空字段。使用如下语句为testtb表中的name字段添加非空约束。
+alter table testtb modify name varchar(100) not null;
+
+删除非空约束
+去除非空约束只要将字段修改为可以为空即可，当然，如果字段有其他约束，不要忘了加载语句的后面。
+alter table testtb modify name varchar(100) null;
+
+
+
+2、自动增长
+
+添加自动增长
+为字段设置自动增长，同样既可以使用change，也可以使用modify，具体不同可参考"表管理语句"中的"修改表"部分。
+
+如下语句表示为testtb表的id字段设置自动增长。
+alter table testtb modify id int auto_increment;
+
+如下语句表示为testtb表的id字段设置自动增长。
+alter table testtb change id id int auto_increment;
+
+
+删除自动增长
+去除自动增长的语句可以结合着添加自动增长的语句查看。同样有两种方法，使用change或者modify均可。
+alter table testtb change id id int;
+alter table testtb modify id int;
+
+
+
+3、主键约束
+
+添加主键约束
+使用如下两条语句中的任意一条均可为表设置主键，注意，一个表中只能有一个主键。
+如下命令表示将testtb4中的id字段指定为表的主键，通过如下语句设置的主键的主键名称默认为PRIMARY。
+alter table testtb4 add primary key(id);
+alter table testtb4 add constraint primary key(id);
+
+删除主键约束
+去除主键时需要注意，不能直接删除主键，需要先删除自动增长，然后再删除主键。
+注意：如果对应的主键上存在自动增长，则不能直接删除主键，需先删除自动增长后，再使用如下语句删除主键。同理，如果当前表的主键已经被其他表中的字段当做外键，那么则需要先删除其他表中的主外键关系，才能删除当前主键。
+alter table testtb drop primary key;
+
+
+
+4、唯一键约束
+
+添加唯一键约束
+使用如下语句，添加唯一键约束，唯一键的名称默认为字段名称，如果对一个字段重复创建唯一键，唯一键名称将会按照创建时的序号依次向后增加，但是针对同一个字段重复创建唯一键是没有任何意义的，也强烈不建议这样做。
+alter table testtb add unique key(uid);
+使用如下语句在创建唯一键的时候，可以指定唯一键的名称，例如，指定唯一键的名称为uni_test。
+alter table testtb add unique key uni_test(test);
+
+
+
+删除唯一键约束
+使用如下语句删除唯一键uni_test,注意，删除唯一键时使用的是index关键字。
+alter table testtb drop index uni_test;
+
+
+
+5、查看约束
+
+查看主键 / 查看唯一键 /查看外键
+针对一张表而言，查看主键，查看外键，查看唯一键 可以使用同样一条语句完成。
+如下语句表示显示出test1表中的主键信息、唯一键信息以及外键信息，也就是说test1表的所有键信息（不包含纯索引index信息）都会显示出来。
+select * from information_schema.key_column_usage where table_name='test1';
+
+当然，除了上述方法，也可以只查看主键，比如最简单的方法，查看test1的表结构，即可查看test1表的主键。
+desc test1
+如果不想查看主键，只想查看特定表的外键，则可以使用下面"查看主外键对应关系"中提到的方法。
+
+
+查看主外键对应关系
+如下语句表示查看test1这张表中引用了哪些表中的主键作为自己的外键。也可以理解为查看test1表的外键。
+select TABLE_NAME,COLUMN_NAME,CONSTRAINT_NAME,REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME
+from information_schema.KEY_COLUMN_USAGE
+where TABLE_NAME = 'test1' and REFERENCED_TABLE_NAME is not null;
+
+
+如下语句表示查看test2这张表的主键被哪些表引用成为了外键，可以与上一个示例对比查看。
+select REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME,CONSTRAINT_NAME,TABLE_NAME,COLUMN_NAME
+from information_schema.KEY_COLUMN_USAGE
+where REFERENCED_TABLE_NAME = 'test2';
+
+
+6、外键约束
+
+添加外键约束
+使用如下两条语句设置外键，如下语句表示在testtb表中创建一个新的字段，tid，并且添加了一个外键，外键的名称叫testtb_tid_fk，外键中， testtb表中的tid字段引用了表testtb2表中的id字段。
+alter table testtb add column tid int default 0 not null;
+alter table testtb add constraint testtb_tid_fk foreign key(tid) references testtb2(id);
+
+删除外键约束
+如果想要删除外键，必须先查询到对应外键的名称，才能去除外加，使用"查看主外键对应关系"中的方法，可以查看某张表中的所有外键，找到对应的外键名称后，根据外键名称删除即可。
+例如，先使用如下语句查询到test4表中的外键有哪些，可能有多个，找到对应的外键名称，比如外键 test_tid_fk。
+select TABLE_NAME,COLUMN_NAME,CONSTRAINT_NAME,REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME
+from information_schema.KEY_COLUMN_USAGE
+where TABLE_NAME = 'test4' and REFERENCED_TABLE_NAME is not null;
+
+使用如下语句 ，表示删除test4表中的 test_tid_fk 外键。
+alter table test4 drop foreign key test_tid_fk;
+
+<<<<<
+
+
+>>>>>
+索引管理
+
+添加一个索引/创建一个纯粹的索引
+这里所说的纯粹的索引指的就是index，不是unique index，只是单纯的index，使用如下语句表示为testtb表的name字段添加一个单纯的索引，索引的名字为ind_name。
+alter table testtb add index ind_name(name);
+
+当我们使用上述语句添加索引以后，使用show index from testtb;可以查看到对应的索引，但是在information_schema.KEY_COLUMN_USAGE 表中将不会存在同名的"约束"，而当我们创建一个唯一键或者唯一索引的时候，不仅能在information_schema.KEY_COLUMN_USAGE表中看到对应名称的"约束",同时还能使用show index from testtb;查看到对应名称的索引，这就体现了"键/约束"与"索引"的不同，当我们创建一个约束的时候，会创建对应的索引，但是如果只是创建一个单纯的索引，"纯index"，那么它则只是一个"索引"罢了。
+
+我们还可以使用另外一种语法创建索引，语法如下。
+CREATE  [UNIQUE|FULLTEXT|SPATIAL] INDEX index_name [using index_type] ON tbl_name (index_col_name,...)
+
+上述语法中，我们可以指定创建哪种特殊索引，也可以只使用index，表示创建一个纯索引，[using index_type]表示索引类型，可省略，省略后默认使用btree类型的索引，并且指明在哪个表的哪个字段上创建索引。index_col_name用于指明字段名称，示例如下，如下语句表示在testtb表的name字段上创建一个索引，索引的名称为ind_name,索引的长度为20（注意，20并不是表示name字段的长度，假如name字段长度为100，此处指定20表示取出name字段的左边开头的头20个字节作为索引），索引为降序排列，不指定desc时默认以升序排序。
+create index ind_name on testtb (name(20) desc);
+create index ind_name on testtb (name(20));
+create index ind_name on testtb (name);
+
+如下示例语句表示创建一个联合索引。
+create index ind_id_name on testtb1 (id,name);
+create index ind_id_name on testtb1 (id,name(20));
+
+重建索引
+数据库长时间运行后，索引会有损坏的可能，这个时候，重建索引，可以提高数据的检索速度，所以，重建索引的操作在平常的维护工作中可能会被用到，不过mariadb中的innodb存储引擎不支持重建索引。
+repair table table_name quick;
+
+删除一个索引
+使用如下语句可以删除testtb表中的纯索引以及唯一索引。
+alter table test2 drop index uu_ttt;
+
+查看索引
+show index from testtb;
+
+根据索引名称，查看testtb表中的部分索引，如下语句表示查看testtb表中以ind开头的索引。
+show index from testtb where key_name like 'ind%';
+
+<<<<<
+
+
+>>>>>
+insert语句
+
+insert常用语句
+
+mysql中insert语句的语法如下
+insert into tablename(字段1名称,字段2名称,...) values(字段1值,字段2值,...)
+
+示例如下：
+向表tb1中插入一条数据，插入数据对应的字段为name和age，name的值为tom，age为33。
+insert into tb1 (name,age) values('tom',33);
+
+向表tb1中插入多条数据，具体含义同上，只不过是插入多条语句。
+insert into tb1 (name,age) values('jerry',22),('naruto',28);
+
+也可以不指定字段，表示对应每个字段都会有插入的数据。
+insert into tb1 values (4,'Sasuke',28),(5,'hinata',25);
+
+其实，除了使用上述的语法插入数据，我们还能够使用如下语法
+insert into tablename set 字段1名称=字段1值,字段2名称=字段2值
+示例如下：
+insert into tbl2 set id=2,name="test",age=18,gender='M';
+
+聪明如你一定发现了，上述两种语法的不同之处在于，字段名称与字段值是否分开了，使用set的方式字段名与字段值是在一起的。
+除了这一点不同之处，其实，他们还有另外一点不同，就是，使用set的方式插入数据时，insert语句中字段的顺序可以与表中字段的顺序不同，而第一种语法中，字段顺序必须与表中字段的顺序相同。
+
+<<<<<
+
+
+>>>>>
+delete语句
+
+delete 常用语句
+删除数据的语句比较简单，主要是通过where子句给定删除的范围，而where子句的示例可以参考select常用语句，但是删除前请确定给定的条件没有任何问题，在不确定的情况下不要随意删除数据。
+如下语句表示删除tb1中的所有数据，也就是清空tb1表，非常危险，切勿随意使用。
+delete from tb1;
+
+根据给定的条件删除数据，在不确定的情况下或者没有备份的情况下，请勿随意删除数据
+delete from tb1 where age=22;
+delete from tb1 where name rlike '^t.*';
+
+如下语句表示，从tb1表中找出age>30的数据行，然后将这些行按照age进行降序排列，排列后删除第一个。
+delete from tb1 where age > 30 order by age desc limit 1;
+
+<<<<<
+
+
+>>>>>
+update语句
+
+update常用语句
+修改数据的语句也比较简单，主要是通过where子句给定修改的范围，而where子句的示例可以参考select常用语句，执行更新语句之前请确定给定的条件是正确的，因为不加任何条件的更新语句表示更新表中的所有字段，如果你不确定要这么做，这样是非常危险的，所以执行update语句之前，也要再三确定条件给定正确。
+如下语句表示更新tb1表中所有行的age字段的值为28，这种语句比较危险，除非你确定这样做，否则切勿执行。
+update tb1 set age = 28;
+
+如下语句表示将tb1表中id号为13的行中的name字段的值改为luffy.
+update tb1 set name='luffy' where id=13;
+
+如下语句同上，只是一次修改了多个字段的值。
+update tb1 set name='luffy',age=25 where id=13;
+
+<<<<<
+
+
+>>>>>
+select基本语句
+
+最简单最粗暴的查询语句如下，查询tb1表中的所有数据，如果表中的数据量巨大，那么使用如下语句纯属作死，非必要情况下，一般不要这样对数据进行查询，在如下示例中，为了方便总结，可能会经常使用这种查询方式。
+select * from tb1;
+
+表示从tb1表中查询出所有数据，但是只显示前3行。
+select * from tb1 limit 3;
+
+从tb1表中查询出name字段与age字段的数据，即使这样写，也没有比上例的语句好多少，它仍然是显示表中的所有行的指定字段，表中的数据量较大时，这样写也是非常不好的，除非必要，一般不要这样写。
+select name,age from tb1;
+
+从tb1表中查询出符合条件的数据，使用where字句给定条件，带有筛选条件的查询语句则会比上面两种查询语句好很多，如下示例中给出常用的条件表达式。
+select name,age from tb1 where age = 25;
+
+查出tb1表中age不等于28的数据。
+select * from tb1 where age != 28;
+
+如下两条语句均表示从tb1表中查询出age大于等于25并且小于等于28的数据。
+select * from tb1 where age >= 25 and age <=28;
+select name,age from tb1 where age between 25 and 28;
+
+如下语句表示从tb1表中查询出age等于25或者等于28的数据。
+select * from tb1 where age = 25 or age = 28;
+
+如下语句表示从tb1表中查询出age不在25到28区间中的数据。
+select * from tb1 where age not between 25 and 28;
+select * from tb1 where age < 25 or age > 28;
+
+使用like结合通配符进行模糊查询，如下语句表示查询tb1表中name字段以j开头的数据，"%"在查询语句中表示"任意长度的任意字符".
+select * from tb1 where name like 'j%';
+
+如下语句表示查询tb1表中name字段以t开头，并且只有三个字符的数据，"_"在查询语句中表示"任意单个字符"，下例中的语句中，在t后面跟随了两个"_",表示t后面的两个字符可以是任意字符。
+select * from tb1 where name like 't__';
+
+也许你觉得还不够灵活，或许你更习惯使用正则表达式作为匹配条件，没有关系，满足你，我们可以使用rlike结合正则表达式，对字符数据进行模糊查询，所以，查询语句能有多强大的功能，就看你的正则表达式运用的有多熟练了，示例语句如下。
+如下语句表示查询出tb1表中name字段以t开头的所有数据，正则表达式的含义此处不再赘述。
+select * from tb1 where name rlike '^t.*';
+
+我们还可以从指定的列表中匹配对应的条件，使用in关键字指定列表，示例如下，如下语句表示从tb1表中查找出age等于22、23、24或25中的任意一个的行的所有数据。
+select * from tb1 where age in (22,23,24,25);
+
+除了使用in，我们还可以使用not in,聪明如你一定秒懂，not in就是in的对立面，比如，查询出tb1表中age不等于28、43、33的数据。
+select * from tb1 where age not in (28,33,43);
+
+我们可以对查询出的数据进行排序，如下示例表示查询tb1表中的所有数据，并且按照age的值从小到大进行升序排序，asc表示升序排序，asc可省，默认使用升序排序。
+select * from tb1 order by age;
+select * from tb1 order by age asc;
+如下示例表示查询tb1表中的所有数据，并且按照age的值从大到小进行降序排序。
+select * from tb1 order by age desc;
+
+查询tb1表中的所有数据，并且按照age的值从大到小进行降序排序，如果多行之间的age字段的值相同时，这些行再根据name字段进行升序排序。
+select * from tb1 order by age desc,name asc;
+
+我们可以在查询某字段的时候去重，使用DISTINCT关键字表示去重查询，比如，查询学生的年龄并去重显示年龄。
+select distinct age from students;
+
+我们也可以在查询时给字段添加别名，以便显示为我们指定的列名。
+select name as StuName,age from tb1;
+
+<<<<<
+
+
+>>>>>
+select分组与聚合语句
+
+以数据表students为例，字段有id, name, age, gender, classid
+
+我们使用students表中的数据，进行分组，我们可以根据性别分组，也可以根据年龄分组。
+比如，我们根据性别对上述数据进行分组，示例如下
+select * from students group by gender;
+
+这时可以看到，根据性别分组后，只分出了两组，因为性别只有男和女两种性别，所以只分出了两组。
+而且每组只显示一条数据，也就是每组的第一条数据，注意，这可能与我们想象的不太一样，分组后每组只显示一条数据。
+
+
+分组的目的往往是对分组后的数据进行"聚合操作"，如下语句：
+select count(id), gender  from students group by gender;
+上例中，我们通过性别对数据进行了分组，然后算出了每组中的人员数量,而上例中的count(id)就是一种"聚合操作",count()是一种聚合函数，这个聚合函数能够算出对应数据的条目数量。
+上例中的count(stuid)表示算出分组后的每组的stuid的数量，这就是所谓的"分组的目的往往是为了聚合操作"的含义。
+
+再举一个列子，比如，我们仍然按照性别分组，然后，算出男生与女生的平均年龄，可以使用如下语句:
+select avg(age), gender  from students group by gender;
+
+
+mysql中常用的聚合函数有哪些呢，如下？
+min(col)返回指定列的最小值
+max(col)返回指定列的最大值
+avg（col）返回指定咧的平均值
+count（col）返回指定列中非null值的个数
+sum（col）返回指定列的所有值之和
+group_concat(col)返回指定列的值，但是会分组显示，也就是说分组显示指定列组合后的结果
+
+
+如果我们想要对分组后的信息再次过滤，该怎么办呢，举个例子，如下:
+select avg(age) as avgage, gender  from students group by gender having avgage > 20;
+从上例可以看出，如果想要对分组过后的信息再次过滤，可以使用having关键字。
+
+
+此处总结一些常用示例：
+
+查询students表，以性别为分组，求出分组后的年龄之和。
+select gender,sum(age) from students group by gender;
+
+查询students表，以classid分组，显示平均年龄大于25的classid。
+select classid,avg(age) as avgage from students group by classid having avgage > 25;
+
+查询students表，以性别字段gender分组，显示各组中年龄大于19的学员的年龄的总和。
+select sum(age) from students where age > 19 group by gender;
+
+
+<<<<<
+
+
+
+
+
+
+
+
+
+
+
+
+

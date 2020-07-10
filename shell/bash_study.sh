@@ -4,7 +4,7 @@
 
 /**
 * @file bash_study.sh
-* @brief  shell脚本学习记录 
+* @brief  shell脚本学习记录
 * @author qigaohua, qigaohua168@163.com
 * @version 1.0.0
 * @date 2018-06-26
@@ -34,14 +34,14 @@ echo "hello bash"
 # “test”判断语句，在实际中应用的比较少；相反的，“[]”判断语句应用很广
 
 # 1.test 判断语句
-#   基本格式 
+#   基本格式
 #       test EXPRESSION
 #   格式说明
 #       test是关键字，表示判断
 #       EXPRESSION 是被判断得语句
 #   关于EXPRESSION的说明,参考如下:
 #       -d FILE   判断文件是不是目录
-#       -f FILE   判断FILE是不是正规文件   
+#       -f FILE   判断FILE是不是正规文件
 #       -L FILE   判断FILE是不是符号链接
 #       -r FILE   判断FILE是不是可读
 #       -s FILE   判断FILE是不是文件长度大于0, 非空
@@ -55,42 +55,42 @@ echo "hello bash"
 #   格式说明
 #       中括号的左右扩弧和EXPRESSION之间都必须有空格!
 #   关于EXPRESSION的说明，参考如下:
-#       (EXPRESSION)                              EXPRESSION 为真           
-#       !EXPRESSION                               EXPRESSION 为假 
-#       EXPRESSION1 -a EXPRESSION2                EXPRESSION1 和 EXPRESSION2 同时为真               
-#       EXPRESSION1 -o EXPRESSION2                EXPRESSION1 或 EXPRESSION2 为真          
-#       -n string                                 string 长度不为0                 
-#       -z string                                 string 长度为0                       
-#       string1 == string2                        字符串相等                         
-#       string1 != string2                        字符串不相等                         
-#       integer1 -eq integer2                     等于                          
-#       integer1 -gt integer2                     大于                          
-#       integer1 -ge integer2                     大于或等于                          
-#       integer1 -lt integer2                     小于                          
-#       integer1 -le integer2                     小于或等于                          
-#       integer1 -ne integer2                     不等于                          
-#       file1 -ef file2                           file1 和 file2 有相同的device和inode数目 
+#       (EXPRESSION)                              EXPRESSION 为真
+#       !EXPRESSION                               EXPRESSION 为假
+#       EXPRESSION1 -a EXPRESSION2                EXPRESSION1 和 EXPRESSION2 同时为真
+#       EXPRESSION1 -o EXPRESSION2                EXPRESSION1 或 EXPRESSION2 为真
+#       -n string                                 string 长度不为0
+#       -z string                                 string 长度为0
+#       string1 == string2                        字符串相等
+#       string1 != string2                        字符串不相等
+#       integer1 -eq integer2                     等于
+#       integer1 -gt integer2                     大于
+#       integer1 -ge integer2                     大于或等于
+#       integer1 -lt integer2                     小于
+#       integer1 -le integer2                     小于或等于
+#       integer1 -ne integer2                     不等于
+#       file1 -ef file2                           file1 和 file2 有相同的device和inode数目
 #       file1 -nt file2                           file1 的修改时间早于 file2
 #       file1 -ot file2                           file1 的修改时间晚于 file2
-#       -b file                                   file 是块设备， 
-#       -c file                                   file 是字符设备， 
-#       -d file                                   file 是目录， 
-#       -e file                                   file 存在 
-#       -f file                                   file 存在, 且是一个普通文件 
-#       -g file                                   file 存在，且有group-id 
-#       -G file                                   file 存在，且group-id是有效的 
-#       -h file                                   file 存在，是一个硬链接 
-#       -k file                                   file 存在，且他的sticky bit被设置了 
-#       -L file                                   file 存在，是一个软链接 
-#       -O file                                   file 存在，且他的拥有者是有效的 
-#       -p file                                   file 存在，且是一个管道文件 
-#       -r file                                   file 存在，且可读 
+#       -b file                                   file 是块设备，
+#       -c file                                   file 是字符设备，
+#       -d file                                   file 是目录，
+#       -e file                                   file 存在
+#       -f file                                   file 存在, 且是一个普通文件
+#       -g file                                   file 存在，且有group-id
+#       -G file                                   file 存在，且group-id是有效的
+#       -h file                                   file 存在，是一个硬链接
+#       -k file                                   file 存在，且他的sticky bit被设置了
+#       -L file                                   file 存在，是一个软链接
+#       -O file                                   file 存在，且他的拥有者是有效的
+#       -p file                                   file 存在，且是一个管道文件
+#       -r file                                   file 存在，且可读
 #       -s file                                   file 存在，且size为0
-#       -S file                                   file 存在，且是socket文件 
-#       -u file                                   file 存在，且他的set-user-id bit被设置了 
-#       -w file                                   file 存在，且可写 
-#       -x file                                   file 存在，且可执行 
-#       -u FD                                     FD 被终端打开  
+#       -S file                                   file 存在，且是socket文件
+#       -u file                                   file 存在，且他的set-user-id bit被设置了
+#       -w file                                   file 存在，且可写
+#       -x file                                   file 存在，且可执行
+#       -u FD                                     FD 被终端打开
 
 
 
@@ -102,32 +102,32 @@ file="bash_study.sh"
 [ "$val" = "bash_study" ]
 # 判断变量num是否等于数字100
 num=100
-if [ $num -eq 100 ]; then 
+if [ $num -eq 100 ]; then
     echo "num = 100"
 fi
 
 # 可读且可写
-if [ -r $file -a -w $file ]; then 
+if [ -r $file -a -w $file ]; then
     echo "$file can r and w"
 fi
 
 #同上
-if [ -r $file ] && [ -w $file ]; then 
+if [ -r $file ] && [ -w $file ]; then
     echo "$file can r and w"
 fi
 
 # 可读或可写
-if [ -r $file -o -w $file ]; then 
+if [ -r $file -o -w $file ]; then
     echo "$file can r or w"
 fi
 
 #同上
-if [ -r $file ] || [ -w $file ]; then 
+if [ -r $file ] || [ -w $file ]; then
     echo "$file can r or w"
 fi
 
 # 不可读
-if [ ! -r $file ]; then 
+if [ ! -r $file ]; then
     echo "$file can't read "
 fi
 
@@ -138,12 +138,12 @@ fi
 
 # 基本格式:
 #   if 条件1
-#   then 
+#   then
 #       命令1
 #   elif 条件2
-#   then 
+#   then
 #       命令2
-#   else 
+#   else
 #       命令3
 #   fi
 
@@ -154,8 +154,8 @@ fi
 # 示例1：判断文件bash_stuty.sh 是否存在
 
 if [ -e bash_study.sh ]; then
-    echo "file is exist" 
-else 
+    echo "file is exist"
+else
     echo "file not exist"
 fi
 
@@ -166,13 +166,13 @@ fi
 echo -n  "Please input a number:"
 
 # 读取用户输入的值到num
-read num 
+read num
 
-if [ $num -eq 0 ]; then 
+if [ $num -eq 0 ]; then
     echo "number zero"
-elif [ $num -gt 0 ]; then 
+elif [ $num -gt 0 ]; then
     echo "positive number"
-else 
+else
     echo "negtive number"
 fi
 
@@ -183,9 +183,9 @@ fi
 # 四、case 语句
 #   case语句为多选择语句。可以用case语句匹配一个值与一个模式,如果匹配成功,执行相匹配的命令。
 
-# 基本格式： 
-#   case 值 in 
-#   模式1)    
+# 基本格式：
+#   case 值 in
+#   模式1)
 #       命令1
 #   ;;
 #   模式2)
@@ -204,11 +204,11 @@ fi
 
 echo -n "Please input Y/N: "
 
-read val 
+read val
 
-case $val in 
+case $val in
     Y|y)
-        echo "Yes" 
+        echo "Yes"
         ;;
     N|n)
         echo "No"
@@ -227,7 +227,7 @@ esac
 
 # 基本格式
 #   for 变量名 in 列表
-#   do 
+#   do
 #       命令1
 #       命令2
 #   done
@@ -241,13 +241,13 @@ esac
 
 cur_dir=`ls`
 
-for file in $cur_dir 
-do 
-    if [ -f $file ]; then 
+for file in $cur_dir
+do
+    if [ -f $file ]; then
         echo "普通文件: $file"
-    elif [ -d $file ];then 
+    elif [ -d $file ];then
         echo "目录: $file"
-    else 
+    else
         echo "其他: $file"
     fi
 done
@@ -257,7 +257,7 @@ done
 
 sum=0
 for ((i=1;i<10;i++))
-do 
+do
     ((sum=$sum + $i))
 done
 
@@ -270,7 +270,7 @@ echo "sum = $sum"
 
 # 基本格式:
 #   while 条件
-#   do 
+#   do
 #       命令1
 #       命令2
 #   done
@@ -280,7 +280,7 @@ echo "sum = $sum"
 val=0
 
 while [ $val -lt 5 ]
-do  
+do
     ((val++))
     echo "val = $val"
 done
@@ -294,7 +294,7 @@ done
 
 # 基本格式
 # until 条件
-# do 
+# do
 #       命令1
 #       命令1
 # done
@@ -304,7 +304,7 @@ done
 val=0
 
 until [ $val -eq 5 ]  # 直到val等于5退出循环
-do 
+do
     ((val++))
     echo "val = $val"
 done
@@ -324,7 +324,7 @@ val=0
 
 while true
 do
-    if [ $val -eq 5 ]; then 
+    if [ $val -eq 5 ]; then
         break ;
     fi
     ((val++))
@@ -337,7 +337,7 @@ val=0
 
 while [ $val -le 10 ]
 do
-    if [ $val -eq 5 ]; then 
+    if [ $val -eq 5 ]; then
         ((val=$val+2))
         continue ;
     fi
@@ -427,7 +427,7 @@ function func()
     echo "param total = $total"
 
     for val in $@
-    do 
+    do
         ((i++))
         echo "$i   $val"
     done
@@ -437,7 +437,7 @@ function func()
 }
 
 # 不传入参数
-func 
+func
 
 # 传入三个参数
 func param1 param2 param3
@@ -453,7 +453,7 @@ echo "func return ret = $ret"
 # 十一、数值运算
 
 # 1、常见的四种数值运算实现方式
-#   (())、let、expr、bc 
+#   (())、let、expr、bc
 
 # 2、工作效率比较
 #   (()) == let > expr > bc
@@ -475,7 +475,7 @@ echo "expr  val = $val"
 val=`echo "3*(5+2)"|bc`
 echo "bc  val = $val"
 
-# 应用示例二：分别勇上面四种方式实现“数值+1”。  
+# 应用示例二：分别勇上面四种方式实现“数值+1”。
 val=0
 
 ((val++))
@@ -516,7 +516,7 @@ echo "bc  val = $val"
     ${var=default}             如果var没有被声明，那么就以default作为传回值,同时将$var 赋值为default
     ${var:=default}            如果var没有被声明，或者其值为空，那么就以default作为传回值,同时将$var 赋值为default
     ${var+other}               如果var声明了，那么就以other作为传回值, 否则null作为传回值
-    ${var:+other}              如果var为非空值，那么就以other作为传回值, 否则null作为传回值 
+    ${var:+other}              如果var为非空值，那么就以other作为传回值, 否则null作为传回值
     ${var?ERR_MSG}             如果var没有被声明，那么就打印ERR_MSG
     ${var:?ERR_MSG}            如果var为空值，    那么就打印ERR_MSG
 
@@ -527,11 +527,11 @@ echo "bc  val = $val"
     ${string:pos}                         在string中,,从pos位置提取string的子串
     ${string:pos:length}                  在string中,,从pos位置提取长度为length的string的子串
     ${string#substring}                   从变量$string的开头，删除最短匹配substring的子串
-    ${string##substring}                  从变量$string的开头，删除最长匹配substring的子串 
+    ${string##substring}                  从变量$string的开头，删除最长匹配substring的子串
     ${string%substring}                   从变量$string的结尾，删除最短匹配substring的子串
     ${string%%substring}                  从变量$string的结尾，删除最长匹配substring的子串
-    ${string/substring/repalce}           使用replace 来代替第一个匹配的substring 
-    ${string//substring/replace}          使用replace 来代替所有匹配的substring  
+    ${string/substring/repalce}           使用replace 来代替第一个匹配的substring
+    ${string//substring/replace}          使用replace 来代替所有匹配的substring
     ${string/#substring/replace}          如果$string 的前缀匹配substring，那么使用replace来代替substring
     ${string/%substring/replace}          如果$string 的后缀匹配substring，那么使用replace来代替substring
 
@@ -604,15 +604,15 @@ echo ${path/"dir2/"/}
 :||{
 
 十四、bash 调试
-    
+
 1、bash 命令
-    
+
     使用方法：bash [-nvx] scripts.sh
     说明：
         -n: 不要执行 script,仅查询语法的问题;
         -v: 再执行 sccript 前,先将 scripts 的内容输出到屏幕上;
         -x: 将使用到的 script 内容显示到屏幕上,这是很有用的参数!
-        
+
 
 例如，想要执行bash脚本，并查看bash的调用流程，可以通过以下命令：
 bash -x yourscript.sh
@@ -733,12 +733,12 @@ bash -x yourscript.sh
 2、awk条件操作符
 
     符号                           描述
-    <                              小于 
+    <                              小于
     <=                             小于等于
     ==                              等于
     !=                             不等于
     >=                             大于等于
-    >                              大于  
+    >                              大于
     ~                              匹配正则表达式
     !~                             不匹配正则表达式
 
@@ -753,7 +753,7 @@ bash -x yourscript.sh
 #   match(s,r)                      测试s是否包含匹配r的字符串
 #   split(s,a,fs)                   在fs上将s分成序列a
 #   sprint(fmt, exp)                返回经fmt格式化的exp
-#   sub(r,s)                        
+#   sub(r,s)
 #   substr(s,p)                     返回字符串 s中从p开始的后缀部分
 #   substr(s,p,n)                   返回字符串 s中从p开始长度为n的后缀部分
 
@@ -774,7 +774,7 @@ bash -x yourscript.sh
 # 1、输出文件全部文本
 awk '{print $0}' test.txt
 
-# 2、输出 'ls -l' 的权限和文件名（即每条记录的第一个字段和第九个字段） 
+# 2、输出 'ls -l' 的权限和文件名（即每条记录的第一个字段和第九个字段）
 ls -l | awk '{printf("%s  %s\n", $1, $9)}'
 # 提示 printf：输出指令。它的使用方法和C语言中printf的使用方法一样
 
