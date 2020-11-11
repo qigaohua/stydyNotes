@@ -1,3 +1,92 @@
+git 简单使用
+
+
+>>>>>
+基本命令
+
+
+初始配置
+git config --global user.name "qigaohua"
+git config --global user.email "xxxxxx"
+
+查看自己的用户名和邮箱设置:
+git config --global --list
+
+创建git仓库：
+git init命令是把当前目录转化成git repo
+git init repo_name 命令是在当前目录中创建一个以repo_name命名的新目录，新目录是一个git repo
+
+保存项目当前的状态，将当前状态提交到了版本库中
+git add .   (git add -A / git add -- file1 file2)
+git commit -m "xxx"
+
+将暂存操作和提交操作一次性完成:
+git commit -am "xxxxx"
+
+查看哪些文件的状态有变更:
+git status
+
+查看提交历史:
+git log
+使用"git log"命令的--oneline选项，以简易模式查看提交的信息
+
+
+删除文件：
+1.在文件系统中删除testfile1文件。
+rm file1
+2. 在git中将删除文件的变更添加到暂存区
+git add file1
+
+上述两步操作可以通过一条命令来完成:
+git rm -f file1         (强制删除本地文件)
+git rm --cached  file1  (保留本地文件)
+
+
+文件重命名:
+git mv oldfile newfile
+
+
+将远程仓库克隆到本地：
+git clone git@github.com:qigaohua/test.git
+
+查看当前本地仓库对应的远程仓库：
+git remote -v
+
+
+
+把远程仓库的最新代码同步到本地中:
+git fetch
+注意："git fetch"命令只会将真正的远程分支中的更新同步到本地的"代表"分支中，并不会将更新一并
+同步到真正的"纯"本地分支中（本地工作区中）。 还需要执行一下合并操作：git merge origin/testmodule1
+
+上述fetch+merge的操作步骤可以通过一条命令完成，这条命令就是"git pull"命令.
+1. git pull origin m1
+表示拉取origin远程仓库中的m1分支到当前分支, 本地必须当前就处于m1分支。
+
+2. git pull origin Abr:Abr
+上述命令的意思是，将远程的Abr分支pull到本地的Abr分支，同时，将远程的Abr分支pull到本地的当前所在分支，
+如果我们当前就处于Abr分支，那么上述命令的作用就是将远程Abr分支的最新更新拉取到本地Abr分支，如果我们
+当前处于非Abr分支，那么上述命令就会将远程Abr分支更新到本地Abr分支的同时，也将远程Abr分支pull到本地分
+支上，由于pull命令本身就有merge的操作，所以当合并的分支名不同时，出现冲突的概率会比较大
+
+3. git pull
+什么选项都没有加,上述命令的作用就是，pull当前分支的同名上游分支，并且将其他分支的同名上游分支的更新fetch到本地。
+
+举个例子，比如，当前仓库有A、B、C三个分支，这3个分支都已经checkout到本地的仓库当中了，假设当前我们处
+于本地的A分支中，那么，当我们执行"git pull"命令时，会有几种情况
+情况1：当我们处于A分支，A分支的同名上游分支没有更新，但是B分支或者C分支的同名上游分支有更新，执行"git pull"命令，
+你会看到git对B分支或者C分支执行了fetch操作，但是只是fetch，没有对应的自动merge操作，当然，如果B分支和C分支的同名
+上游分支都有更新，就都会fetch。
+情况2：当我们处于A分支，A分支的同名上游分支有更新，B分支或者C分支的同名上游分支也有更新，执行"git pull"命令，你
+会看到git对A分支执行了pull操作（即fetch+merge），对B分支或C分支执行了fetch操作，当然，如果B分支和C分支的同名上游
+分支都有更新，就都会fetch。
+
+
+<<<<<
+
+
+
+
 >>>>>
 分支
 
@@ -8,17 +97,21 @@ git branch -vv
 创建分支：
 git branch 名字
 
+删除分支:
+git branch -d 名字
+删除的分支还没有合并到其他分支中，我们使用"-d"参数，是无法删除对应分支的
+如果你无论如何就是想要删除分支，无论它是否被完全合并都想要删除它，可以
+使用"-D"选项（大写D），即可强制删除对应的分支
+
 检出（切换）到其他分支：
 git checkout test
 在没有创建test分支时，我们可以使用"git checkout –b test"命令同时完成创建test分支并检出test分支的操作。
-
 
 
 分离头:
 "通常情况下"，HEAD总是指向当前所在的分支（即指向当前分支的分支指针）
 "不是那么通常的情况", HEAD指针没有指向分支指针，而是直接指向了某个提交,称之为"分离头"（detached HEAD）。
 我们直接在git checkout命令后面指定某个提交的哈希码，即可进入到分离头的状态。
-
 
 分离头状态的使用场景:
 git建议我们，在分离头的状态下，我们可以随便看看，可以按照我们的想法，对当前目录中的文件进行一些实验性的修改，
@@ -28,7 +121,55 @@ git建议我们，在分离头的状态下，我们可以随便看看，可以�
 字），来永久性的保存这些提交。
 选择放弃这个匿名分支, 你可以直接检出到任何一个别的分支，就相当于放弃了这些提交。
 选择保存这个匿名分支，给这个匿名分支一个固定的名字：git checkout -b 名字。
+
+
+
+合并分支：
+如果你想要的将A分支合并到B分支，就需要先检出到B分支，然后再执行合并命令将A分支合并进来
+git checkout B分支（git switch B分支 ）
+git merge A分支 -m "xxx"
+
+
+git merge --no-ff A   明确指定不使用"Fast-forward"的模式进行合并
+git merge --ff-only A 只有在符合"Fast-forward"模式的前提下才能合并成功
+git merge --no-edit A 创建合并提交之前不会调用编辑器
+使用-m参数指定合并提交对应的注释信息,为了保险起见，需要同时使用"--no-ff"参数，
+否则在满足"Fast-forward"模式的情况下，会直接使用"Fast-forward"模式进行合并，从而忽略了-m选项对应的注释信息
+
 <<<<<
+
+
+>>>>>
+解决冲突
+
+
+使用git merge A分支 合并分支发生冲突时，会返回警告信息，信息中包括发生冲突的文件路径。
+而且当前分支还处于"合并中"的状态，也就是说，合并操作并没有完成，还在进行中，此时，
+如果我们执行git status命令，会提示我们该接下来该怎么操作,两个选择：
+第一种选择是：修复冲突，然后将确定后的内容创建提交。
+第二种选择是：使用"git merge --abort"命令放弃合并。
+
+选择第一种：
+我们能够找到所有未完成合并的文件（存在冲突的文件），打开冲突文件, 我们来看看，在产生冲突
+以后，文件变成了什么样子。
+当冲突发生以后，git会自动将冲突的部分标注出来。git会使用如下结构，将冲突的内容标注起来
+    <<<<<<< HEAD
+
+    =======
+
+    >>>>>>> BranchName
+
+git会将当前分支中的内容放在 "<<<<<<< HEAD" 与 "=======" 之间。
+git会将new分支中的内容放在 "======="  与 "<<<<<<< BranchName" 之间。
+git并不能确定, 选择那个内容，所以，需要我们人为的进行裁决，决定最终的内容。
+
+我们人为的进行裁决后，git add 冲突文件, 使用git commit命令创建了提交，将解决
+冲突后的合并状态永久的保存了在了新提交中。
+
+
+<<<<<
+
+
 
 
 >>>>>
@@ -67,8 +208,99 @@ git diff branch1 branch2
 <<<<<
 
 
+>>>>>
+撤销修改
+
+
+把暂存区恢复到未暂存任何工作区修改的状态（即与最新的commit的状态保持一致）:
+git reset HEAD
+
+从暂存区去除某个文件的变更，其他文件的变更仍然保留在暂存区中：
+git reset HEAD -- 文件名1 文件名2
+
+将工作区、暂存区都恢复成了最近的提交中的状态
+git reset --hard HEAD
+
+现在来扩展一下，上述命令其实不仅仅适用于最新的提交，我们还可以把上述命令中的"HEAD"替换成
+任意一个提交的哈希码（commit ID），比如如下命令：
+git reset  commitID
+git reset --hard commitID
+
+当前分支中的最新提交会变成commitID对应的提交，工作区和暂存区中的内容或者变更不会受到任何影响：
+git reset --soft commitID
+
+
+撤销工作区的变更,这里有两种情况：
+情况一：你只是在工作区进行了变更，还没有将对应变更添加到暂存区,
+    你想要将工作区中的修改撤销，让工作区还原成最近一次提交时的样子。
+
+git checkout -- 文件名1 文件名2 (git checkout -- ./*)
+
+情况二：你已经将部分变更添加到了暂存区，然后你又接着干活，在工作区产生了新的变更，
+这些新的变更还没有添加到暂存区，此时你后悔了，你想要将工作区中的新的变更（还没
+有添加到暂存区的新的变更）撤销，让工作区还原成最近一次暂存时的样子
+
+git checkout -- 文件名1 文件名2 (git checkout -- ./*)
+
+
+总结出一个规律，就是通过"git checkout -- file"命令可以帮助我们撤销工作区中的变更，
+但是这种撤销是分情况的，如果你撤销的文件已经添加到了暂存区中，并且在那之后又在工作
+区中进行了新修改，那么"git checkout -- file"命令会将工作区中的最新的变更撤销，将文
+件的状态还原成上次暂存时的状态，如果暂存区中并没有对应的文件的变更，
+那么"git checkout -- file"命令会将工作区中的变更撤销，将文件的状态还原成上次提交时的状态。
+
+<<<<<
 
 
 
+>>>>>
+远程仓库
 
+
+将远程仓库克隆到本地：
+git clone git@github.com:qigaohua/test.git
+
+查看当前本地仓库对应的远程仓库：
+git remote -v
+
+
+将本地的内容推送到远程origin仓库:
+git push origin master:master (git push origin master)
+"master:master"中冒号左边的master代表你要推送的本地master分支，冒号右边的master代表推送
+到远程仓库中的master分支。
+注：git push origin master:m1命令，当远程仓库中没有m1分支时，则会在远程仓库中新建m1分支，
+并且将本地master分支中的内容推送到新建的远程的m1分支中
+
+
+将本地新建分支推送到远程仓库，有两个步骤：
+1.先推送本地分支到远程仓库
+git push origin new:new （git push origin new：推送的本地分支和对应的远程分支同名）
+2.再手动的设置本地分支的上游分支
+git branch new --set-upstream-to=origin/new
+上述命令表示将本地的new分支的上游分支设置为"origin/new"分支，
+
+我们也可以使用短选项"-u"代替长选项"--set-upstream-to="
+git branch new -u origin/new  (= git branch -u origin/new new)
+
+2个步骤合在一起：
+git push --set-upstream origin new:new (new 是新建分支名称)
+
+
+
+将之前有一个只有自己使用的本地仓库同步到新创建的远程仓库：
+1. 新建一个远程仓库
+2. 手动的将本地仓库的上游仓库指定为新创建的远程仓库
+git remote add origin git@github.com:qigaohua/test.git
+远程仓库的地址就是"git@github.com:qigaohua/test.git"，远程仓库名和仓库地址你可以根据实际情况进
+行设定，当然，这个地址也可以是https格式的地址。
+执行上述命令后，本地仓库的远程仓库就指定为origin了，此时再次执行命令"git remote -v"查看远程仓库，
+就能够看到对应的远程仓库地址了。
+你也可以为同一个本地仓库添加多个远程仓库，换句话说就是，你可以为本地仓库添加多个远程仓库的对应关
+系，这样你在本地仓库执行拉取操作和推送操作时，就需要指定对应的远程仓库名称，比如，我们之前执行的
+推送命令"git push -u origin new"，你可以将命令中的origin换成对应的远程仓库名称就行了
+当你为本地仓库指定远程仓库后，剩下的事情就很好办了，我们只需要将本地仓库的分支推送到远程，就可以
+通过远程仓库进行协作了
+
+
+<<<<<
 
